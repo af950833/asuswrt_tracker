@@ -108,22 +108,27 @@ device_tracker.192_168_0_59
 
 공유기가 리부팅 중이거나 일시적으로 응답하지 않는 경우, 기존 상태를 유지하고 다음 폴링에서 다시 갱신을 시도합니다.
 
-## manifest.json
+## HACS 설치
 
-```json
-{
-  "domain": "asuswrt_tracker",
-  "name": "ASUSWRT Tracker",
-  "codeowners": ["@af950833"],
-  "config_flow": true,
-  "documentation": "https://github.com/af950833/asuswrt_tracker",
-  "integration_type": "hub",
-  "iot_class": "local_polling",
-  "loggers": ["asusrouter"],
-  "requirements": ["asusrouter==1.21.3"],
-  "version": "1.0"
-}
+HACS에서 사용자 정의 저장소를 추가합니다.
+
+```text
+HACS > 우측 상단 메뉴 > 사용자 정의 저장소
 ```
+
+저장소 URL:
+
+```text
+https://github.com/af950833/asuswrt_tracker
+```
+
+카테고리:
+
+```text
+Integration
+```
+
+저장소를 추가한 뒤 HACS에서 `ASUSWRT Tracker`를 설치하고 Home Assistant를 재시작합니다.
 
 ## 라이선스
 
