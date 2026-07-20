@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ASUSWRT Tracker",
+        "description": "Track only the configured IP addresses from an ASUSWRT router over HTTP.",
+        "data": {
+          "host": "Host",
+          "username": "Username",
+          "password": "Password",
+          "tracking_ips": "Tracking IPs",
+          "polling_interval": "Polling interval"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the router.",
+      "invalid_host": "Invalid host.",
+      "invalid_tracking_ips": "Tracking IPs must be valid IP addresses, one per line.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This router is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ASUSWRT Tracker Options",
+        "data": {
+          "tracking_ips": "Tracking IPs",
+          "polling_interval": "Polling interval"
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_ips": "Tracking IPs must be valid IP addresses, one per line."
+    }
+  }
+}

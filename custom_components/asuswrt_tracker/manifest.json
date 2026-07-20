@@ -1,0 +1,12 @@
+{
+  "domain": "asuswrt_tracker",
+  "name": "ASUSWRT Tracker",
+  "codeowners": ["@af950833"],
+  "config_flow": true,
+  "documentation": "https://github.com/af950833/asuswrt_tracker",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "loggers": ["asusrouter"],
+  "requirements": ["asusrouter==1.21.3"],
+  "version": "1.0"
+}
