@@ -8,7 +8,7 @@ from .router import AsusWrtTrackerRouter
 
 type AsusWrtTrackerConfigEntry = ConfigEntry[AsusWrtTrackerRouter]
 
-PLATFORMS = [Platform.DEVICE_TRACKER]
+PLATFORMS = [Platform.DEVICE_TRACKER, Platform.BINARY_SENSOR]
 
 
 async def async_setup_entry(

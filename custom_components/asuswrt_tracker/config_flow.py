@@ -18,6 +18,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.device_registry import format_mac
 
 from .const import (
+    CONF_BINARY_SENSOR_IPS,
     CONF_POLLING_INTERVAL,
     CONF_TRACKING_IPS,
     DEFAULT_POLLING_INTERVAL,
@@ -27,7 +28,7 @@ from .const import (
 )
 
 RESULT_CONN_ERROR = "cannot_connect"
-RESULT_INVALID_IPS = "invalid_tracking_ips"
+RESULT_INVALID_IPS = "invalid_ips"
 RESULT_INVALID_HOST = "invalid_host"
 RESULT_UNKNOWN = "unknown"
 
@@ -47,12 +48,12 @@ def parse_tracking_ips(value: str) -> list[str]:
     return ips
 
 
-def validate_tracking_ips(value: str) -> list[str]:
-    """Validate and return tracking IPs."""
-    ips = parse_tracking_ips(value)
-    if not ips:
-        raise ValueError("at least one tracking IP is required")
-    return ips
+def validate_ip_fields(device_tracker_ips: str, binary_sensor_ips: str) -> None:
+    """Validate both IP fields and require at least one IP."""
+    parsed_device_tracker_ips = parse_tracking_ips(device_tracker_ips)
+    parsed_binary_sensor_ips = parse_tracking_ips(binary_sensor_ips)
+    if not parsed_device_tracker_ips and not parsed_binary_sensor_ips:
+        raise ValueError("at least one IP is required")
 
 
 def _get_ip(host: str) -> str | None:
@@ -103,9 +104,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_HOST] = RESULT_INVALID_HOST
 
             try:
-                validate_tracking_ips(user_input[CONF_TRACKING_IPS])
+                validate_ip_fields(
+                    user_input.get(CONF_TRACKING_IPS, ""),
+                    user_input.get(CONF_BINARY_SENSOR_IPS, ""),
+                )
             except ValueError:
-                errors[CONF_TRACKING_IPS] = RESULT_INVALID_IPS
+                errors["base"] = RESULT_INVALID_IPS
 
             if not errors:
                 session = async_create_clientsession(self.hass, cookie_jar=get_cookie_jar())
@@ -145,9 +149,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             try:
-                validate_tracking_ips(user_input[CONF_TRACKING_IPS])
+                validate_ip_fields(
+                    user_input.get(CONF_TRACKING_IPS, ""),
+                    user_input.get(CONF_BINARY_SENSOR_IPS, ""),
+                )
             except ValueError:
-                errors[CONF_TRACKING_IPS] = RESULT_INVALID_IPS
+                errors["base"] = RESULT_INVALID_IPS
 
             if not errors:
                 return self.async_create_entry(title="", data=user_input)
@@ -165,8 +172,12 @@ def _schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Required(CONF_HOST, default=defaults.get(CONF_HOST, "")): str,
             vol.Required(CONF_USERNAME, default=defaults.get(CONF_USERNAME, "")): str,
             vol.Required(CONF_PASSWORD): str,
-            vol.Required(
+            vol.Optional(
                 CONF_TRACKING_IPS, default=defaults.get(CONF_TRACKING_IPS, "")
+            ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(
+                CONF_BINARY_SENSOR_IPS,
+                default=defaults.get(CONF_BINARY_SENSOR_IPS, ""),
             ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
             vol.Required(
                 CONF_POLLING_INTERVAL,
@@ -185,8 +196,12 @@ def _schema(defaults: dict[str, Any]) -> vol.Schema:
 def _options_schema(defaults: dict[str, Any]) -> vol.Schema:
     return vol.Schema(
         {
-            vol.Required(
+            vol.Optional(
                 CONF_TRACKING_IPS, default=defaults.get(CONF_TRACKING_IPS, "")
+            ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(
+                CONF_BINARY_SENSOR_IPS,
+                default=defaults.get(CONF_BINARY_SENSOR_IPS, ""),
             ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
             vol.Required(
                 CONF_POLLING_INTERVAL,

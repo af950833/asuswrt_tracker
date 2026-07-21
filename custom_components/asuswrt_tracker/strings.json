@@ -8,15 +8,21 @@
           "host": "Host",
           "username": "Username",
           "password": "Password",
-          "tracking_ips": "Tracking IPs",
+          "tracking_ips": "Device tracker IPs",
+          "binary_sensor_ips": "Binary sensor IPs",
           "polling_interval": "Polling interval"
+        },
+        "data_description": {
+          "tracking_ips": "IP addresses to create as device_tracker entities, one per line.",
+          "binary_sensor_ips": "IP addresses to create as binary_sensor entities, one per line.",
+          "polling_interval": "Polling interval in seconds. Default is 20 seconds."
         }
       }
     },
     "error": {
       "cannot_connect": "Cannot connect to the router.",
       "invalid_host": "Invalid host.",
-      "invalid_tracking_ips": "Tracking IPs must be valid IP addresses, one per line.",
+      "invalid_ips": "IPs must be valid IP addresses, one per line, and at least one IP is required.",
       "unknown": "Unexpected error."
     },
     "abort": {
@@ -27,14 +33,21 @@
     "step": {
       "init": {
         "title": "ASUSWRT Tracker Options",
+        "description": "Edit tracked IPs and polling interval. Entities for removed IPs are deleted after saving.",
         "data": {
-          "tracking_ips": "Tracking IPs",
+          "tracking_ips": "Device tracker IPs",
+          "binary_sensor_ips": "Binary sensor IPs",
           "polling_interval": "Polling interval"
+        },
+        "data_description": {
+          "tracking_ips": "IP addresses to create as device_tracker entities, one per line.",
+          "binary_sensor_ips": "IP addresses to create as binary_sensor entities, one per line.",
+          "polling_interval": "Polling interval in seconds."
         }
       }
     },
     "error": {
-      "invalid_tracking_ips": "Tracking IPs must be valid IP addresses, one per line."
+      "invalid_ips": "IPs must be valid IP addresses, one per line, and at least one IP is required."
     }
   }
 }

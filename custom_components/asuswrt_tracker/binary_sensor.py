@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import override
-
-from homeassistant.components.device_tracker import ScannerEntity, SourceType
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -16,19 +17,19 @@ async def async_setup_entry(
     entry: AsusWrtTrackerConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up tracked IP device_tracker entities."""
+    """Set up tracked IP binary_sensor entities."""
     router = entry.runtime_data
     async_add_entities(
-        AsusWrtTrackedIp(router, ip_address, router.devices[ip_address])
-        for ip_address in router.device_tracker_ips
+        AsusWrtTrackedIpBinarySensor(router, ip_address, router.devices[ip_address])
+        for ip_address in router.binary_sensor_ips
     )
 
 
-class AsusWrtTrackedIp(ScannerEntity):
-    """Device tracker for one configured IP."""
+class AsusWrtTrackedIpBinarySensor(BinarySensorEntity):
+    """Binary sensor for one configured IP."""
 
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_should_poll = False
-    _attr_source_type = SourceType.ROUTER
 
     def __init__(
         self, router: AsusWrtTrackerRouter, ip_address: str, device: TrackedDevice
@@ -37,37 +38,17 @@ class AsusWrtTrackedIp(ScannerEntity):
         self._ip_address = ip_address
         self._device = device
         self._attr_name = ip_address
-        self._attr_unique_id = router.entity_unique_id(ip_address)
+        self._attr_unique_id = router.binary_sensor_unique_id(ip_address)
 
     @property
-    @override
-    def unique_id(self) -> str:
-        """Return the unique id."""
-        return self._attr_unique_id
-
-    @property
-    @override
-    def is_connected(self) -> bool:
+    def is_on(self) -> bool:
         """Return true when the configured IP is connected."""
         return self._device.connected
 
     @property
-    @override
-    def ip_address(self) -> str:
-        """Return tracked IP address."""
-        return self._ip_address
-
-    @property
-    @override
-    def hostname(self) -> str | None:
-        """Return no hostname."""
-        return None
-
-    @property
-    @override
-    def mac_address(self) -> None:
-        """MAC is intentionally not used by this integration."""
-        return None
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        return {"ip": self._ip_address}
 
     async def async_added_to_hass(self) -> None:
         """Register update callback."""

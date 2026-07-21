@@ -11,7 +11,7 @@ from asusrouter.modules.data import AsusData
 from asusrouter.tools.connection import get_cookie_jar
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -25,6 +25,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .config_flow import parse_tracking_ips
 from .const import (
+    CONF_BINARY_SENSOR_IPS,
     CONF_POLLING_INTERVAL,
     CONF_TRACKING_IPS,
     DEFAULT_POLLING_INTERVAL,
@@ -90,7 +91,7 @@ class AsusWrtTrackerRouter:
 
     async def async_update(self, now: datetime | None = None) -> None:
         """Update tracked devices."""
-        configured_ips = set(self.tracking_ips)
+        configured_ips = set(self.configured_ips)
 
         try:
             clients: dict[str, AsusClient] = await self._api.async_get_data(
@@ -137,17 +138,21 @@ class AsusWrtTrackerRouter:
 
     def _sync_configured_devices(self) -> None:
         """Create configured IP devices and remove entities for deleted IPs."""
-        tracking_ips = self.tracking_ips
+        configured_ips = self.configured_ips
 
         self._devices = {
             ip_address: self._devices.get(ip_address) or TrackedDevice(ip_address)
-            for ip_address in tracking_ips
+            for ip_address in configured_ips
         }
 
         entity_registry = async_get_entity_registry(self.hass)
-        expected_unique_ids = {self.entity_unique_id(ip_address) for ip_address in tracking_ips}
+        expected_unique_ids = {
+            self.entity_unique_id(ip_address) for ip_address in self.device_tracker_ips
+        } | {
+            self.binary_sensor_unique_id(ip_address) for ip_address in self.binary_sensor_ips
+        }
         for entry in list(async_entries_for_config_entry(entity_registry, self.entry.entry_id)):
-            if entry.domain != "device_tracker":
+            if entry.domain not in {Platform.DEVICE_TRACKER, Platform.BINARY_SENSOR}:
                 continue
             if entry.unique_id not in expected_unique_ids:
                 entity_registry.async_remove(entry.entity_id)
@@ -158,9 +163,14 @@ class AsusWrtTrackerRouter:
         self._on_close.append(func)
 
     def entity_unique_id(self, ip_address: str) -> str:
-        """Return a stable entity unique id for a tracked IP on this router."""
+        """Return a stable device_tracker unique id for a tracked IP."""
         router_id = self.entry.unique_id or self.entry.entry_id
         return f"{router_id}_{ip_address}"
+
+    def binary_sensor_unique_id(self, ip_address: str) -> str:
+        """Return a stable binary_sensor unique id for a tracked IP."""
+        router_id = self.entry.unique_id or self.entry.entry_id
+        return f"{router_id}_binary_sensor_{ip_address}"
 
     @property
     def devices(self) -> dict[str, TrackedDevice]:
@@ -188,9 +198,29 @@ class AsusWrtTrackerRouter:
         return f"{DOMAIN}-{self.entry.entry_id}-update"
 
     @property
-    def tracking_ips(self) -> list[str]:
-        """Return configured tracking IPs."""
+    def device_tracker_ips(self) -> list[str]:
+        """Return configured device tracker IPs."""
         raw = self.entry.options.get(
             CONF_TRACKING_IPS, self.entry.data.get(CONF_TRACKING_IPS, "")
         )
         return parse_tracking_ips(raw)
+
+    @property
+    def binary_sensor_ips(self) -> list[str]:
+        """Return configured binary sensor IPs."""
+        raw = self.entry.options.get(
+            CONF_BINARY_SENSOR_IPS, self.entry.data.get(CONF_BINARY_SENSOR_IPS, "")
+        )
+        return parse_tracking_ips(raw)
+
+    @property
+    def configured_ips(self) -> list[str]:
+        """Return all configured IPs without duplicates."""
+        ips: list[str] = []
+        seen: set[str] = set()
+        for ip_address in self.device_tracker_ips + self.binary_sensor_ips:
+            if ip_address in seen:
+                continue
+            ips.append(ip_address)
+            seen.add(ip_address)
+        return ips
